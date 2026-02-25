@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fortum Myyntityökalu 8.89 - Master-versio</title>
+    <style>
+        :root {
+            --primary-blue: #004a99;
+            --light-blue: #e6eff7;
+            --success: #10b981;
+            --text: #1e293b;
+            --accent: #f97316;
+            --info: #3b82f6;
+            --pricing-bg: #fffbeb;
+            --expert-gold: #fef3c7;
+            --expert-border: #d97706;
+            --impact-green: #f0fdf4;
+            --impact-border: #22c55e;
+            --tip-blue: #eff6ff;
+            --tip-border: #3b82f6;
+            --arg-purple: #f5f3ff;
+            --arg-border: #7c3aed;
+        }
+
+        body { font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; margin: 0; background: #f1f5f9; color: var(--text); display: flex; flex-direction: column; align-items: center; }
+        header { background: white; color: var(--primary-blue); width: 100%; padding: 1.2rem 0; text-align: center; border-bottom: 4px solid var(--primary-blue); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        #main-container { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; max-width: 1450px; width: 95%; margin: 20px auto; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        
+        .step-info { font-size: 0.8rem; font-weight: bold; color: var(--primary-blue); text-transform: uppercase; margin-bottom: 8px; display: block; }
+        .speech-bubble { background: var(--light-blue); border-left: 6px solid var(--primary-blue); padding: 20px; margin-bottom: 20px; font-size: 1.2rem; color: #003366; border-radius: 0 12px 12px 0; line-height: 1.4; }
+        
+        .analysis-section { background: var(--expert-gold); border: 2px solid var(--expert-border); border-radius: 12px; padding: 15px; margin-top: 15px; margin-bottom: 20px; display: none; }
+        .analysis-label { font-size: 0.75rem; font-weight: 900; color: var(--expert-border); text-transform: uppercase; margin-bottom: 8px; display: block; border-bottom: 1px solid rgba(217, 119, 6, 0.2); padding-bottom: 4px; }
+        
+        .arg-box { background: var(--arg-purple); border: 2px solid var(--arg-border); padding: 25px; border-radius: 12px; margin-top: 15px; margin-bottom: 25px; box-shadow: 0 10px 25px rgba(124, 58, 237, 0.15); animation: slideIn 0.4s ease-out; }
+        .arg-label { font-size: 1.2rem; font-weight: 900; color: #6d28d9; text-transform: uppercase; margin-bottom: 10px; display: block; }
+        
+        .arg-item { margin-bottom: 15px; }
+        .arg-item summary { font-size: 1.05rem; font-weight: bold; cursor: pointer; color: white; padding: 16px 20px; background: var(--arg-border); border: 2px solid #5b21b6; border-radius: 8px; outline: none; transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(124, 58, 237, 0.2); list-style: none; display: flex; justify-content: space-between; align-items: center; }
+        .arg-item summary::-webkit-details-marker { display: none; }
+        .arg-item summary::after { content: '▼'; font-size: 0.8rem; transition: transform 0.3s ease; }
+        .arg-item[open] summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; margin-bottom: 0; }
+        .arg-item[open] summary::after { transform: rotate(180deg); }
+        .arg-item summary:hover { background: #6d28d9; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(124, 58, 237, 0.3); }
+        .arg-item .arg-content { padding: 20px; background: #fff; border: 2px solid var(--arg-border); border-top: none; font-size: 0.95rem; color: #1e293b; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; margin-top: 0; line-height: 1.6; border-left: 4px solid #5b21b6; }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .button-group-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        button { padding: 12px 16px; cursor: pointer; border: none; border-radius: 8px; background: var(--primary-blue); color: white; font-weight: 600; font-size: 0.95rem; transition: all 0.2s; }
+        button:hover { background: #003366; transform: translateY(-1px); }
+        
+        .multi-btn { background: #fff; color: var(--primary-blue); border: 2px solid #cbd5e1; flex: 1 1 calc(50% - 10px); text-align: center; }
+        .multi-btn.selected { background: var(--primary-blue); color: white; border-color: var(--primary-blue); }
+        .answer-btn { background: #fff; color: var(--primary-blue); border: 2px solid var(--primary-blue); min-width: 120px; text-align: center; }
+        .answer-btn.confirmed { background: var(--primary-blue); color: white; }
+        
+        .yhtio-btn { background: #fff; color: var(--text); border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; flex: 1 1 calc(33% - 10px); text-align: center; font-weight: 600; transition: all 0.2s; }
+        .yhtio-btn:hover { border-color: var(--primary-blue); background: var(--light-blue); color: var(--primary-blue); }
+
+        .primary-action-btn { background: var(--success); color: white; width: 100%; margin-top: 15px; padding: 18px; font-size: 1.1rem; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; }
+
+        .summary-box { margin-bottom: 12px; padding: 12px; border-radius: 8px; border-left: 4px solid #ddd; }
+        .list-label { font-size: 0.65rem; text-transform: uppercase; color: #64748b; font-weight: 800; margin-bottom: 6px; display: block; }
+        
+        .tag-container { display: flex; flex-wrap: wrap; gap: 6px; }
+        .tag { background: white; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; border: 1px solid rgba(0,0,0,0.1); display: flex; align-items: center; gap: 4px; }
+        
+        #vertailu-laskuri { background: #fff; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; margin-top: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .calc-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .calc-column { display: flex; flex-direction: column; gap: 8px; }
+        .calc-column.ours { background: #f0fdf4; padding: 8px; border-radius: 6px; border: 1px solid #dcfce7; }
+        .calc-input-group { display: flex; flex-direction: column; gap: 2px; }
+        .calc-input-label { font-size: 0.6rem; font-weight: bold; color: #64748b; margin-left: 2px; }
+        .calc-input { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box; }
+        
+        .reset-link { color: #ef4444; font-size: 0.85rem; cursor: pointer; font-weight: bold; margin-left: 15px; text-decoration: underline; }
+        .back-btn { background: #94a3b8; padding: 8px 15px; font-size: 0.85rem; color: white; border-radius: 6px; border: none; cursor: pointer; margin-top: 15px; }
+
+        @media (max-width: 900px) {
+            #main-container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header><h1>Fortum Myyntiavustaja 8.89</h1></header>
+
+<div id="main-container">
+    <div class="card">
+        <div id="content"></div>
+    </div>
+
+    <div class="card" style="background: #f8fafc; border: 2px solid #e2e8f0; padding: 20px;">
+        <h3 style="margin-top:0; font-size: 1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Dashboard</h3>
+        
+        <div id="sopimus-display-container" class="summary-box" style="background:#eff6ff; border-left-color:var(--info);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="list-label" style="margin-bottom: 0;">⚡ Sopimusvertailu</span>
+                <span id="hinnasto-link-container"></span>
+            </div>
+            <input type="text" id="kilpailija-yhtio-input" class="yhtio-btn" style="width:100%; text-align:left; cursor:text; margin-bottom:8px; box-sizing:border-box;" placeholder="Yhtiön nimi..." oninput="updateSummaryView()">
+            <div id="sopimus-tags" class="tag-container" style="margin-bottom:8px;"></div>
+            
+            <div id="vertailu-laskuri" style="display:block;">
+                <label style="font-size:0.6rem; font-weight:bold; color:#64748b; margin-bottom: 2px; display: block;">VUOSIKULUTUS (kWh)</label>
+                <input type="text" id="calc-cons" class="calc-input" placeholder="Esim. 15000" oninput="calculateSavings()" style="margin-bottom:12px; font-weight:bold; border-color:var(--primary-blue);">
+                
+                <div class="calc-wrapper">
+                    <div class="calc-column">
+                        <span id="kilpailija-calc-title" style="font-size:0.6rem; font-weight:900; color:#ef4444; border-bottom: 1px solid #fee2e2; padding-bottom: 2px; margin-bottom: 4px;">KILPAILIJA</span>
+                        <div class="calc-input-group">
+                            <label class="calc-input-label">Perusmaksu (€/kk)</label>
+                            <input type="text" id="calc-pm" class="calc-input" placeholder="0,00" oninput="calculateSavings()">
+                        </div>
+                        <div class="calc-input-group">
+                            <label id="unit-label-comp" class="calc-input-label">Energia (snt/kWh)</label>
+                            <input type="text" id="calc-marg" class="calc-input" placeholder="0,00" oninput="calculateSavings()">
+                        </div>
+                    </div>
+                    
+                    <div class="calc-column ours">
+                        <span style="font-size:0.6rem; font-weight:900; color:#166534; border-bottom: 1px solid #dcfce7; padding-bottom: 2px; margin-bottom: 4px;">FORTUM</span>
+                        <div class="calc-input-group">
+                            <label class="calc-input-label">Perusmaksu (€/kk)</label>
+                            <input type="text" id="our-pm" class="calc-input" value="5,99" oninput="calculateSavings()">
+                        </div>
+                        <div class="calc-input-group">
+                            <label class="calc-input-label">Energia (snt/kWh)</label>
+                            <input type="text" id="our-marg" class="calc-input" value="0,59" oninput="calculateSavings()">
+                        </div>
+                        <div class="calc-input-group" style="margin-top: 4px;">
+                            <label class="calc-input-label" style="color: #166534;">Kulutusvaikutus (+/-)</label>
+                            <input type="text" id="our-impact-val" class="calc-input" value="0,00" oninput="calculateSavings()" style="background: #f0fdf4;">
+                        </div>
+                    </div>
+                </div>
+                <div id="calc-result" style="margin-top:10px; font-size:0.9rem; border-top:1px solid #eee; padding-top:8px; text-align: center;"></div>
+            </div>
+
+            <div id="pakkas-widget-container" style="display: none; background: white; border: 2px solid #cbd5e1; border-radius: 8px; padding: 15px; margin-top: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); animation: slideIn 0.3s ease-out;">
+                <span style="font-size: 0.85rem; font-weight: 900; color: #1e293b; text-transform: uppercase; display: block; margin-bottom: 10px; text-align: center;">🚨 Helmikuun sähkölaskun arvio</span>
+                
+                <label style="font-size:0.6rem; font-weight:bold; color:#64748b; margin-bottom: 2px; display: block;">TAMMIKUUN KULUTUS (Arvio tai toteutunut)</label>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <input type="number" id="january-estimate-input" value="" oninput="syncJanInput(this.value)" style="width:100%; padding:8px; border:2px solid var(--accent); border-radius:6px; font-weight:bold; font-size:1.1rem; color: #9a3412;">
+                    <span style="font-size: 0.8rem; color: #475569; font-weight: bold; white-space: nowrap;">kWh</span>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="background: #fee2e2; border: 1px solid #ef4444; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.75rem; font-weight: bold; color: #b91c1c;">Nykyinen riski (19,44 c/kWh)</span>
+                        <span id="lasku-porssi" style="font-size: 1.1rem; font-weight: 900; color: #991b1b;">0,00 €</span>
+                    </div>
+                    
+                    <div style="background: #dcfce7; border: 1px solid #22c55e; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.75rem; font-weight: bold; color: #15803d;">tarkka helmikuun kiinnitys hinnalla (9,55 c/kWh)</span>
+                        <span id="lasku-tarkka" style="font-size: 1.1rem; font-weight: 900; color: #166534;">0,00 €</span>
+                    </div>
+                    
+                    <div style="background: #dcfce7; border: 1px solid #22c55e; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.75rem; font-weight: bold; color: #15803d;">Fortum Duo (7,59 c/kWh)</span>
+                        <span id="lasku-duo" style="font-size: 1.1rem; font-weight: 900; color: #166534;">0,00 €</span>
+                    </div>
+                </div>
+                <p style="margin: 10px 0 0 0; font-size: 0.65rem; color: #64748b; text-align: center;">Laskelma sisältää perusmaksut, ilman sähkönsiirtoa.</p>
+            </div>
+
+        </div>
+
+        <div id="combined-analysis-box" class="analysis-section" style="background: var(--impact-green); border-color: var(--impact-border);">
+            <span class="analysis-label" style="color: var(--impact-border); border-bottom-color: rgba(34, 197, 94, 0.2);">📊 Kulutusvaikutus / Pörssin painotettu keskihinta</span>
+            <div id="impact-display-large" style="text-align: center; padding: 10px 0;">
+                <span style="font-size: 0.8rem; color: #64748b; display: block; margin-bottom: 4px;">Arvioitu vaikutus pörssihintaan</span>
+                <div style="font-size: 2.2rem; font-weight: 900; color: #15803d; letter-spacing: -1px;">
+                    <span id="mini-impact-val">-0,00</span> <small style="font-size: 1.2rem; font-weight: 600;">c/kWh</small>
+                </div>
+            </div>
+            <div style="margin-top: 5px; margin-bottom: 15px; padding: 12px; background: #e6ffed; border-left: 4px solid #15803d; border-radius: 6px; font-size: 0.85rem; color: #14532d;">
+                <b style="color: #15803d; text-transform: uppercase; font-size: 0.75rem; display: block; margin-bottom: 4px;">📱 Vinkki</b>
+                <span id="mobiiliappi-vinkki-teksti">Fortumin mobiiliäppi kertoo kulutusvaikutuksen kehityksen pitkin kuukautta, ja helpottaa alennuksen realisointia. Sillä on kiva yrittää aina "voittaa" pörssihinta koko kuulta!</span>
+            </div>
+            <div id="impact-bullets" style="display: flex; flex-direction: column; gap: 6px; margin-top: 5px;"></div>
+        </div>
+
+        <div id="kartoitus-display-container" class="summary-box" style="display:none; background:#fff7ed; border-left-color:var(--accent);"><span class="list-label">🏠 Kohde & Lämmitys</span><div id="kartoitus-tags" class="tag-container"></div></div>
+        <div id="kulutus-display-container" class="summary-box" style="display:none; background:#f0fdf4; border-left-color:var(--success);"><span class="list-label">📊 Laitteet & Rytmi</span><div id="kulutus-tags" class="tag-container"></div></div>
+
+        <textarea id="muistiinpanot" style="width:100%; box-sizing:border-box; height:60px; border-radius:8px; padding:10px; margin-top:10px; border:1px solid #cbd5e1; resize:none;" placeholder="Lisätietoja puhelusta..."></textarea>
+        <button class="primary-action-btn" onclick="tallennaPuhelu()">Lataa yhteenveto (.txt)</button>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

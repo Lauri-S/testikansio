@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Myynnin Tilastot - Fortum Myyntityökalu</title>
+    <style>
+        :root { --primary-blue: #004a99; --text: #1e293b; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; margin: 0; background: #f1f5f9; color: var(--text); display: flex; flex-direction: column; align-items: center; }
+        header { background: white; color: var(--primary-blue); width: 100%; padding: 1.2rem 0; text-align: center; border-bottom: 4px solid var(--primary-blue); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        #main-container { max-width: 1450px; width: 95%; margin: 20px auto; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .stats-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .stats-card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .stats-list { list-style: none; padding: 0; }
+        .stats-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
+        .stats-list li:last-child { border-bottom: none; }
+        .stats-list .step-name { color: #334155; font-weight: 500; }
+        .stats-list .step-count { font-weight: bold; background: #e2e8f0; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; }
+        .section-title { grid-column: 1 / -1; margin-top: 30px; margin-bottom: 10px; font-weight: 400; color: #475569; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Fortum Myyntiavustaja 8.89</h1>
+    <nav style="margin-top: 10px; display:flex; justify-content:center; gap: 10px;">
+        <a href="/" style="color: var(--primary-blue); text-decoration: none; padding: 5px 10px; font-weight: bold;">Myyntityökalu</a>
+        <a href="/tilastot" style="color: white; text-decoration: none; padding: 5px 10px; border-radius: 5px; background: #005eb8;">Tilastot</a>
+    </nav>
+        <button onclick="lataaData()" style="background-color: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; transition: background 0.2s;">📥 Varmuuskopioi</button>
+        <button onclick="nollaaTilastot()" style="background-color: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; transition: background 0.2s;">🗑️ Nollaa</button>
+</header>
+
+<div id="main-container">
+    <!-- Asiakasprofiili -->
+    <h2 class="section-title">👥 Asiakasprofiili & Taustatiedot</h2>
+    <div class="stats-grid">
+        <div class="stats-card">
+            <h3 style="color: #0f172a;">📞 Aloitustapa</h3>
+            <ul id="opening-stats" class="stats-list"><li>Ladataan...</li></ul>
+        </div>
+        <div class="stats-card">
+            <h3 style="color: #0f172a;">🏠 Asumismuoto</h3>
+            <ul id="housing-stats" class="stats-list"><li>Ladataan...</li></ul>
+        </div>
+        <div class="stats-card">
+            <h3 style="color: #0f172a;">🔥 Lämmitysratkaisut</h3>
+            <ul id="heating-stats" class="stats-list"><li>Ladataan...</li></ul>
+        </div>
+        <div class="stats-card">
+            <h3 style="color: #0f172a;">⚡ Nykyinen sopimus</h3>
+            <ul id="contract-stats" class="stats-list"><li>Ladataan...</li></ul>
+            <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee; text-align: center;">
+                <span style="font-size: 0.8rem; color: #64748b;">Keskimääräinen vuosikulutus</span>
+                <div id="avg-consumption" style="font-size: 1.5rem; font-weight: bold; color: #004a99;">0 kWh</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Myyntisuppilo -->
+    <h2 class="section-title">🛣️ Myyntipolkujen analyysi</h2>
+    <div class="stats-grid">
+        <div class="stats-card">
+            <h3 style="color: #166534;">✅ Onnistuneet kaupat</h3>
+            <ul id="kauppa-stats" class="stats-list"><li>Ladataan...</li></ul>
+        </div>
+        <div class="stats-card">
+            <h3 style="color: #991b1b;">❌ Ei kauppoja</h3>
+            <ul id="ei-kauppaa-stats" class="stats-list"><li>Ladataan...</li></ul>
+        </div>
+        <div class="stats-card">
+            <h3 style="color: #b91c1c;">📞 Luuri korvaan</h3>
+            <ul id="luuri-korvaan-stats" class="stats-list"><li>Ladataan...</li></ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        lataaTilastot();
+    });
+
+    async function lataaData() {
+        try {
+            const response = await fetch(`/api/calls`);
+            const data = await response.json();
+            
+            if (data.success && data.calls.length > 0) {
+                const items = data.calls;
+                const replacer = (key, value) => value === null ? '' : value; 
+                const header = Object.keys(items[0]);
+                const csv = [
+                    header.join(','), 
+                    ...items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
+                ].join('\r\n');
+
+                const blob = new Blob(["\uFEFF"+csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `myyntidata_${new Date().toISOString().slice(0,10)}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else { alert('Ei ladattavaa dataa.'); }
+        } catch (e) { console.error(e); alert('Virhe latauksessa.'); }
+    }
+
+    async function nollaaTilastot() {
+        let msg = "VAROITUS: Haluatko varmasti nollata KAIKKI tilastot koko järjestelmästä? Tätä toimintoa ei voi perua.";
+        
+        if (confirm(msg)) {
+            try {
+                const response = await fetch(`/api/reset-stats`, { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else { alert('Virhe: ' + data.message); }
+            } catch (e) { alert('Verkkovirhe nollauksessa.'); }
+        }
+    }
+
+    async function lataaTilastot() {
+        try {
+            const response = await fetch(`/api/funnel-stats`);
+            const data = await response.json();
+
+            if (data.success) {
+                renderStats('kauppa', data.stats.kauppa || {});
+                renderStats('ei-kauppaa', data.stats['ei kauppaa'] || {});
+                renderStats('luuri-korvaan', data.stats['luuri korvaan'] || {});
+
+                if (data.demographics) {
+                    renderConversionList('housing-stats', data.demographics.housing);
+                    renderConversionList('heating-stats', data.demographics.heating);
+                    renderConversionList('contract-stats', data.demographics.contract);
+                    renderConversionList('opening-stats', data.demographics.opening);
+                    document.getElementById('avg-consumption').innerText = data.demographics.avg_consumption + ' kWh';
+                }
+            } else {
+                document.querySelectorAll('.stats-list').forEach(el => el.innerHTML = '<li>Virhe ladatessa.</li>');
+            }
+        } catch (error) {
+            console.error('Tilastojen haku epäonnistui:', error);
+            document.querySelectorAll('.stats-list').forEach(el => el.innerHTML = '<li>Verkkovirhe.</li>');
+        }
+    }
+
+    function renderConversionList(elementId, dataObj) {
+        const container = document.getElementById(elementId);
+        if (!container || !dataObj) return;
+        
+        // Järjestä kauppaprosentin mukaan (korkein ensin)
+        const sorted = Object.entries(dataObj).sort(([, a], [, b]) => b.win_rate - a.win_rate);
+        if (sorted.length === 0) { container.innerHTML = '<li>Ei dataa.</li>'; return; }
+
+        let html = '';
+        for (const [key, stats] of sorted) {
+            // Värikoodaus onnistumisprosentille
+            let color = '#64748b'; // harmaa (oletus)
+            if (stats.win_rate >= 20) color = '#166534'; // vihreä (hyvä)
+            if (stats.win_rate >= 50) color = '#15803d'; // tummanvihreä (erinomainen)
+            if (stats.win_rate === 0) color = '#991b1b'; // punainen (ei kauppoja)
+
+            html += `<li>
+                <span class="step-name">${key}</span> 
+                <span class="step-count" style="background: ${color}20; color: ${color}; font-size: 0.75rem;">
+                    ✅ ${stats.kauppa} | ❌ ${stats.ei_kauppaa} | 📞 ${stats.luuri_korvaan} 
+                    <strong style="margin-left:5px;">(${stats.win_rate}%)</strong>
+                </span>
+            </li>`;
+        }
+        container.innerHTML = html;
+    }
+
+    function renderStats(type, statsData) {
+        const container = document.getElementById(`${type}-stats`);
+        if (!container) return;
+
+        const sortedData = Object.entries(statsData).sort(([, a], [, b]) => b - a);
+
+        if (sortedData.length === 0) {
+            container.innerHTML = '<li>Ei dataa.</li>';
+            return;
+        }
+
+        let html = '';
+        for (const [step, count] of sortedData) {
+            // Siistitään polkua luettavammaksi
+            let cleanPath = step.replace(/_/g, ' ').replace(/->/g, '→');
+            // Korostetaan viimeinen vaihe
+            html += `<li><span class="step-name" style="max-width: 80%; line-height: 1.3;">${cleanPath}</span> <span class="step-count">${count}</span></li>`;
+        }
+        container.innerHTML = html;
+    }
+</script>
+</body>
+</html>

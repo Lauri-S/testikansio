@@ -21,7 +21,7 @@ echo [OK] Python löytyi
 REM Tarkista riippuvuudet
 echo.
 echo Asennetaan riippuvuudet...
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
 if %errorlevel% neq 0 (
     echo ERROR: Riippuvuuksien asennus epäonnistui!

@@ -99,7 +99,9 @@ def end_call():
             lopputulos=data.get('lopputulos'),
             lopputulos_vaihe=data.get('lopputulos_vaihe'),
             polku=data.get('polku'),
-        
+            aloitus=data.get('aloitus')
+        )
+        db.session.add(puhelu)
         db.session.commit()
         
         return jsonify({
@@ -248,7 +250,10 @@ def get_funnel_stats():
                 'housing': housing_stats,
                 'heating': heating_stats,
                 'contract': contract_stats,
-                'opening': opening_stats
+                'opening': opening_stats,
+                'avg_consumption': round(avg_consumption) if avg_consumption else 0
+            }
+        })
     except Exception as e:
         return jsonify({
             'success': False,

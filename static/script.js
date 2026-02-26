@@ -11,7 +11,6 @@ let kulutusTiedot = {};
 let pricingTiedot = {};
 let voitettavaSopimus = '';
 let current30DayPrice = "lasketaan...";
-let kaytetytVastalauseet = new Set(); // Tallentaa käytetyt argumentit
 
 // --- VASTA-ARGUMENTIT KIRJASTO ---
 const vastaArgumentitData = {
@@ -364,21 +363,10 @@ function paivitaVastalausekirjasto() {
         <div style="display: flex; flex-direction: column; gap: 10px;">`;
 
     allArgs.forEach((item, index) => {
-        const isUsed = kaytetytVastalauseet.has(item.q);
-        const checkColor = isUsed ? '#22c55e' : '#cbd5e1';
-        const checkBg = isUsed ? '#dcfce7' : '#fff';
-        
-        html += `<div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 5px;">
-            <button onclick="toggleVastalauseKaytto('${item.q}')" style="min-width: 44px; height: 44px; border-radius: 8px; border: 2px solid ${checkColor}; background: ${checkBg}; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: all 0.2s; flex-shrink: 0;" title="Merkitse käytetyksi">
-                ${isUsed ? '✅' : '⬜'}
-            </button>
-            <div style="flex-grow: 1;">
-                <button class="objection-btn" onclick="toggleObjection('obj-${index}')" style="text-align: left; padding: 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; font-weight: bold; color: #334155; width: 100%; transition: all 0.2s;">${item.q}</button>
-                <div id="obj-${index}" style="display: none; padding: 15px; background: #f0f9ff; border-left: 4px solid #0ea5e9; margin-top: 5px; border-radius: 8px;">
-                    <p style="margin: 0 0 10px; font-size: 0.95rem; line-height: 1.5;"><b>💡 Vastaus:</b> ${item.arvo[0]}</p>
-                    ${item.alennus && item.alennus.length > 0 ? `<div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #bae6fd; font-size: 0.9rem; color: #0369a1;"><b>🎁 "Ässä hihassa" (Alennus):</b> ${item.alennus[0]}</div>` : ''}
-                </div>
-            </div>
+        html += `<button class="objection-btn" onclick="toggleObjection('obj-${index}')" style="text-align: left; padding: 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; font-weight: bold; color: #334155; width: 100%; transition: all 0.2s;">${item.q}</button>
+        <div id="obj-${index}" style="display: none; padding: 15px; background: #f0f9ff; border-left: 4px solid #0ea5e9; margin-top: -5px; margin-bottom: 5px; border-radius: 0 0 8px 8px;">
+            <p style="margin: 0 0 10px; font-size: 0.95rem; line-height: 1.5;"><b>💡 Vastaus:</b> ${item.arvo[0]}</p>
+            ${item.alennus && item.alennus.length > 0 ? `<div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #bae6fd; font-size: 0.9rem; color: #0369a1;"><b>🎁 "Ässä hihassa" (Alennus):</b> ${item.alennus[0]}</div>` : ''}
         </div>`;
     });
 
@@ -387,15 +375,6 @@ function paivitaVastalausekirjasto() {
 }
 
 function toggleObjection(id) { const el = document.getElementById(id); el.style.display = (el.style.display === 'none') ? 'block' : 'none'; }
-
-function toggleVastalauseKaytto(argumenttiOtsikko) {
-    if (kaytetytVastalauseet.has(argumenttiOtsikko)) {
-        kaytetytVastalauseet.delete(argumenttiOtsikko);
-    } else {
-        kaytetytVastalauseet.add(argumenttiOtsikko);
-    }
-    paivitaVastalausekirjasto(); // Päivitä näkymä (värit ja ikonit)
-}
 
 function calculateSavings() {
     const parseInput = (val) => parseFloat((val || '').toString().replace(/\s/g, '').replace(',', '.')) || 0;
@@ -454,7 +433,6 @@ function updateSummaryView() {
 function resetApp() {
     stepHistory = []; currentStep = ''; valittuAsumismuoto = ''; valitutNeliot = 100;
     valitutLammitykset = {}; kulutusTiedot = {}; pricingTiedot = {}; voitettavaSopimus = '';
-    kaytetytVastalauseet.clear();
     document.getElementById('kilpailija-yhtio-input').value = '';
     document.getElementById('calc-cons').value = '';
     document.getElementById('our-impact-val').value = '0,00';
@@ -504,10 +482,23 @@ async function paivitaTilastot() {
 }
 
 function luoTasmaArgumentit(stepId) {
-    const baseArgs = vastaArgumentitData.yleiset;
-    const specificArgs = vastaArgumentitData[stepId] || [];
-    const allArgs = [...baseArgs, ...specificArgs];
-    return allArgs.sort(() => 0.5 - Math.random()).slice(0, 2);
+    let args = [];
+    
+    // Luodaan oikeat myyntitärpit asiakastiedon perusteella
+    if (valittuAsumismuoto === 'Omakotitalo' || valittuAsumismuoto === 'Erillistalo') {
+        args.push("🏠 <b>Omakotitaloasuja:</b> Korosta, että talvella sähkölasku on suurin menoerä. Hintatakuu tuo turvaa.");
+    }
+    if (valitutLammitykset['Sähkölämmitys']) {
+        args.push("⚡ <b>Sähkölämmitys:</b> Asiakas hyötyy valtavasti Duon kulutusvaikutuksesta, jos pystyy ajoittamaan lämmitystä.");
+    }
+    if (voitettavaSopimus && voitettavaSopimus.includes('Määräaikainen')) {
+        args.push("📉 <b>Määräaikainen päättymässä:</b> Nyt on loistava hetki vaihtaa, hinnat ovat tulleet alas huipuista.");
+    }
+    
+    // Jos ei erityistä, lisätään yleinen
+    if (args.length === 0) args.push("💡 <b>Vinkki:</b> Muista mainita Oma Fortum -sovelluksen hyödyt kulutuksen seurannassa.");
+    
+    return args;
 }
 
 function handleHangUp() {
@@ -559,8 +550,7 @@ async function endCall(outcome) {
         lopputulos: outcome,
         lopputulos_vaihe: currentStep,
         polku: polkuString,
-        aloitus: aloitus,
-        kaytetyt_argumentit: Array.from(kaytetytVastalauseet).join('|') // Muutetaan Set merkkijonoksi
+        aloitus: aloitus
     };
     try {
         const response = await fetch('/api/end-call', {

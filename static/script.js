@@ -227,12 +227,16 @@ function renderStep(stepId, isHistoryBypass = false) {
     
     if (stepId.startsWith('pitch')) {
         html += `<div id="tasma-args-container"></div>`;
-        paivitaTarpit();
+        html += `<div id="vastalause-container" style="margin-top: 20px;"></div>`;
     }
 
     if(stepId !== 'alku') html += `<div style="margin-top:20px;"><button class="back-btn" onclick="goBack()">← Takaisin</button><span class="reset-link" onclick="resetApp()">Palaa alkuun</span></div>`;
     
     container.innerHTML = html;
+    if (stepId.startsWith('pitch')) {
+        paivitaTarpit();
+        paivitaVastalausekirjasto();
+    }
     paivitaLaskuWidget();
     window.scrollTo(0,0);
 }
@@ -344,6 +348,33 @@ function paivitaTarpit() {
         container.innerHTML = htm;
     } else { container.innerHTML = ''; }
 }
+
+function paivitaVastalausekirjasto() {
+    if (!currentStep.startsWith('pitch')) return;
+    const container = document.getElementById('vastalause-container');
+    if (!container) return;
+
+    const baseArgs = vastaArgumentitData.yleiset || [];
+    const specificArgs = vastaArgumentitData[currentStep] || [];
+    const allArgs = [...baseArgs, ...specificArgs];
+
+    let html = `<div style="background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 15px;">
+        <h3 style="margin-top:0; color: #475569; font-size: 1.1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;">🛡️ Älykäs vastalausekirjasto</h3>
+        <div style="display: flex; flex-direction: column; gap: 10px;">`;
+
+    allArgs.forEach((item, index) => {
+        html += `<button class="objection-btn" onclick="toggleObjection('obj-${index}')" style="text-align: left; padding: 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; font-weight: bold; color: #334155; width: 100%; transition: all 0.2s;">${item.q}</button>
+        <div id="obj-${index}" style="display: none; padding: 15px; background: #f0f9ff; border-left: 4px solid #0ea5e9; margin-top: -5px; margin-bottom: 5px; border-radius: 0 0 8px 8px;">
+            <p style="margin: 0 0 10px; font-size: 0.95rem; line-height: 1.5;"><b>💡 Vastaus:</b> ${item.arvo[0]}</p>
+            ${item.alennus && item.alennus.length > 0 ? `<div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #bae6fd; font-size: 0.9rem; color: #0369a1;"><b>🎁 "Ässä hihassa" (Alennus):</b> ${item.alennus[0]}</div>` : ''}
+        </div>`;
+    });
+
+    html += `</div></div>`;
+    container.innerHTML = html;
+}
+
+function toggleObjection(id) { const el = document.getElementById(id); el.style.display = (el.style.display === 'none') ? 'block' : 'none'; }
 
 function calculateSavings() {
     const parseInput = (val) => parseFloat((val || '').toString().replace(/\s/g, '').replace(',', '.')) || 0;

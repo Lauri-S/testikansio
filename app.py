@@ -6,13 +6,14 @@ Flask-sovellus sähkön myyntiapuun
 from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-import json
 import os
 import google.generativeai as genai
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///puhelut.db'
+# Määritetään absoluuttinen polku tietokannalle, jotta se toimii PythonAnywheressä
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'puhelut.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -207,8 +208,6 @@ def get_funnel_stats():
         def get_category_stats(column):
             # Hakee: (Kategoria, Lopputulos, Määrä)
             query = db.session.query(column, Puhelu.lopputulos, db.func.count(Puhelu.id))
-            if filter_myyja and filter_myyja != 'Kaikki':
-                query = query.filter(Puhelu.myyja == filter_myyja)
             results = query.group_by(column, Puhelu.lopputulos).all()
             
             stats = {}

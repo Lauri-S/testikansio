@@ -227,22 +227,6 @@ function renderStep(stepId, isHistoryBypass = false) {
     
     if (stepId.startsWith('pitch')) {
         html += `<div id="tasma-args-container"></div>`;
-        
-        // Lisätään vastalausekirjasto näkyviin
-        let vastalauseet = [...vastaArgumentitData.yleiset];
-        // Varmistetaan toimivuus sekä uusilla (pitch_*) että vanhoilla avaimilla
-        if (stepId === 'pitch_duo') vastalauseet = [...vastalauseet, ...(vastaArgumentitData.pitch_duo || vastaArgumentitData.duo || [])];
-        else if (stepId === 'pitch_porssi') vastalauseet = [...vastalauseet, ...(vastaArgumentitData.pitch_porssi || vastaArgumentitData.tarkka || [])];
-
-        html += `<div class="arg-box"><span class="arg-label">🛡️ Älykäs Vastalausekirjasto</span>`;
-        vastalauseet.forEach((item) => {
-            html += `<details class="arg-item"><summary>${item.q}</summary><div class="arg-content">`;
-            item.arvo.forEach(a => html += `<p>✅ ${a}</p>`);
-            if (item.alennus) item.alennus.forEach(a => html += `<p style="color:#d97706; font-weight:bold;">🎁 ${a}</p>`);
-            html += `</div></details>`;
-        });
-        html += `</div>`;
-
         paivitaTarpit();
     }
 
@@ -524,7 +508,6 @@ async function endCall(outcome) {
         polku: polkuString,
         aloitus: aloitus
     };
-
     try {
         const response = await fetch('/api/end-call', {
             method: 'POST',

@@ -206,7 +206,11 @@ def get_funnel_stats():
         # Apufunktio: Laske jakauma ja kauppaprosentti
         def get_category_stats(column):
             # Hakee: (Kategoria, Lopputulos, Määrä)
-            results = db.session.query(column, Puhelu.lopputulos, db.func.count(Puhelu.id)).group_by(column, Puhelu.lopputulos).all()
+            query = db.session.query(column, Puhelu.lopputulos, db.func.count(Puhelu.id))
+            if filter_myyja and filter_myyja != 'Kaikki':
+                query = query.filter(Puhelu.myyja == filter_myyja)
+            results = query.group_by(column, Puhelu.lopputulos).all()
+            
             stats = {}
             for label, outcome, count in results:
                 if not label: continue

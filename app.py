@@ -292,9 +292,11 @@ def generate_pitch():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Virhe myyntipuheen generoinnissa: {str(e)}'}), 500
 
+# Varmistetaan, että tietokantataulut ovat olemassa (ajetaan myös PythonAnywheressä)
+with app.app_context():
+    db.create_all()
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all() # Luo tietokanta, jos sitä ei ole
     print("🚀 Fortum Myyntiavustaja käynnistyy...")
     print("📍 Avaa selain: http://localhost:5000")
     app.run(debug=True, port=5000)

@@ -541,7 +541,7 @@ async function endCall(outcome) {
         }
     } catch (error) {
         console.error('Virhe tallennuksessa:', error);
-        alert('Verkkovirhe tallennuksessa. Tarkista konsoli.');
+        alert('Verkkovirhe tallennuksessa: ' + error.message + '\n\nTarkista, että palvelin on käynnissä ja tietokanta toimii.');
     }
 }
 

@@ -7,6 +7,8 @@ from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
+import sys
+import logging
 import google.generativeai as genai
 
 app = Flask(__name__)
@@ -15,6 +17,10 @@ app.secret_key = 'your-secret-key-here'
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'puhelut.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Asetetaan lokitus stderr-virtaan, jotta viestit näkyvät PythonAnywheren error.logissa
+logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+
 db = SQLAlchemy(app)
 
 # Tietokanta-kansio
@@ -66,7 +72,7 @@ if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel('gemini-pro')
 else:
-    print("VAROITUS: GEMINI_API_KEY ei ole asetettu. Gemini Pro -ominaisuudet eivät toimi.")
+    logging.warning("VAROITUS: GEMINI_API_KEY ei ole asetettu. Gemini Pro -ominaisuudet eivät toimi.")
     model = None
 
 @app.route('/')
@@ -293,10 +299,13 @@ def generate_pitch():
         return jsonify({'success': False, 'message': f'Virhe myyntipuheen generoinnissa: {str(e)}'}), 500
 
 # Varmistetaan, että tietokantataulut ovat olemassa (ajetaan myös PythonAnywheressä)
-with app.app_context():
-    db.create_all()
+try:
+    with app.app_context():
+        db.create_all()
+except Exception as e:
+    logging.error(f"VIRHE TIETOKANNAN LUONNISSA: {e}")
 
 if __name__ == '__main__':
-    print("🚀 Fortum Myyntiavustaja käynnistyy...")
-    print("📍 Avaa selain: http://localhost:5000")
+    logging.info("🚀 Fortum Myyntiavustaja käynnistyy...")
+    logging.info("📍 Avaa selain: http://localhost:5000")
     app.run(debug=True, port=5000)
